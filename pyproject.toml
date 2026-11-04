@@ -14,8 +14,10 @@ keywords = ["llm", "evals", "evaluation", "ci"]
 dependencies = []
 
 [project.optional-dependencies]
+judge = ["anthropic>=0.40"]
 supabase = ["supabase>=2"]
-langfuse = ["langfuse>=2"]
+langfuse = ["langfuse>=3"]
+all = ["codeks-evals[judge,supabase,langfuse]"]
 dev = ["pytest>=8", "ruff>=0.6"]
 
 [project.scripts]

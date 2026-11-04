@@ -1,0 +1,29 @@
+name: codeks-evals gate
+description: Run a JSONL eval set and fail the job when the pass rate drops below the baseline.
+inputs:
+  evalset: { description: Path to the JSONL eval set, required: true }
+  target: { description: "module:function the harness calls with each input", required: true }
+  baseline: { description: Path to the baseline JSON, default: "" }
+  max-drop: { description: Allowed pass-rate drop vs. baseline (0-1), default: "0" }
+  min-pass-rate: { description: Absolute floor (0-1), default: "" }
+  extras: { description: "codeks-evals extras to install (e.g. judge,supabase,langfuse)", default: "judge" }
+  python-version: { description: Python version, default: "3.12" }
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with: { python-version: "${{ inputs.python-version }}" }
+    - shell: bash
+      run: pip install "${{ github.action_path }}[${{ inputs.extras }}]"
+    - shell: bash
+      env:
+        EVALSET: ${{ inputs.evalset }}
+        TARGET: ${{ inputs.target }}
+        BASELINE: ${{ inputs.baseline }}
+        MAX_DROP: ${{ inputs.max-drop }}
+        MIN_RATE: ${{ inputs.min-pass-rate }}
+      run: |
+        args=("$EVALSET" --target "$TARGET" --max-drop "$MAX_DROP")
+        [ -n "$BASELINE" ] && args+=(--baseline "$BASELINE")
+        [ -n "$MIN_RATE" ] && args+=(--min-pass-rate "$MIN_RATE")
+        codeks-evals run "${args[@]}"

@@ -2,7 +2,7 @@
 
 A small eval harness for LLM features. Write cases as JSONL, score outputs, and fail the PR when the pass rate drops.
 
-> Status: early. Core runner, exact-match and schema scorers, and the CI gate work today. LLM-judge scoring, Supabase results, Langfuse traces and the dashboard are next (see the [roadmap](https://github.com/codeksnet/labs/blob/main/docs/PLAN.md)).
+> Status: early. Runner, exact-match / schema / LLM-judge scorers, baseline gate, Supabase results and Langfuse traces work (tested against fakes; not yet run against live accounts). The dashboard is next (see the [roadmap](https://github.com/codeksnet/labs/blob/main/docs/PLAN.md)).
 
 ## Install
 
@@ -27,12 +27,42 @@ codeks-evals run evalsets/example.jsonl --target myapp.llm:suggest --min-pass-ra
 
 Exit code is 1 below the floor, which is what the GitHub Action gates on.
 
+### Scorers
+
+| `scorer` | `expected` | Passes when |
+|---|---|---|
+| `exact` (default) | a string | output equals it (trimmed) |
+| `schema` | `{"key": "string\|number\|integer\|boolean\|array\|object"}` | output is a JSON object with those keys and types |
+| `judge` | a plain-English rubric | an LLM judge (default `claude-haiku-5-5`, needs `ANTHROPIC_API_KEY`, `pip install 'codeks-evals[judge]'`) says it meets the rubric. Judge errors fail the case. |
+
+### Gate a PR against a baseline
+
+```sh
+codeks-evals run evalsets/x.jsonl --target app:fn --save-baseline evalsets/x.baseline.json  # on main
+codeks-evals run evalsets/x.jsonl --target app:fn --baseline evalsets/x.baseline.json --max-drop 0.02
+```
+
+Or use the composite action:
+
+```yaml
+- uses: codeksnet/evals@main
+  with:
+    evalset: evalsets/x.jsonl
+    target: app:fn
+    baseline: evalsets/x.baseline.json
+```
+
+### Record runs
+
+- `--supabase` saves the run (needs `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`; apply `supabase/migrations/0001_eval_runs.sql` and add `evals` to the exposed schemas in the Supabase API settings).
+- `--langfuse` sends a trace with a span per case and a `pass_rate` score (needs `LANGFUSE_*`).
+
 ## Roadmap
 
 - [x] JSONL loader, runner, exact-match + schema scorers, CLI gate
-- [ ] LLM-judge scorer
-- [ ] Results to Supabase, Langfuse trace per run
-- [ ] Reusable GitHub Action that compares against the baseline on `main`
+- [x] LLM-judge scorer
+- [x] Results to Supabase, Langfuse trace per run
+- [x] Reusable GitHub Action that compares against a baseline
 - [ ] Next.js dashboard (lives in [codeksnet/labs](https://github.com/codeksnet/labs))
 - [ ] Target eval set: ResumeMaster suggestion prompt, ~30 synthetic cases
 
