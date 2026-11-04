@@ -1,0 +1,3 @@
+{"id": "ex-1", "input": "2+2", "expected": "4"}
+{"id": "ex-2", "input": "capital of France", "expected": "Paris"}
+{"id": "ex-3", "input": "make a task", "expected": {"title": "string", "done": "boolean"}, "scorer": "schema"}
