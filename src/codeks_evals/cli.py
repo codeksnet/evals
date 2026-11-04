@@ -13,6 +13,8 @@ from .core import load_cases, run_eval
 
 def _load_target(spec: str):
     module, _, attr = spec.partition(":")
+    if os.getcwd() not in sys.path:  # console scripts don't put the project root on the path
+        sys.path.insert(0, os.getcwd())
     return getattr(importlib.import_module(module), attr)
 
 
